@@ -1,1 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mobile Number Information Lookup</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Sora:wght@500;700&display=swap");
 
+      :root {
+        --bg-base: #060b14;
+        --bg-elevated: rgba(18, 27, 43, 0.6);
+        --bg-elevated-strong: rgba(25, 36, 56, 0.78);
+        --border-soft: rgba(173, 216, 255, 0.18);
+        --text-primary: #eef6ff;
+        --text-muted: #9eb1cb;
+        --accent: #3eb3ff;
+        --accent-alt: #52f2d6;
+        --danger: #ff7d8f;
+        --ok: #65f5b2;
+        --warn: #f6c768;
+        --shadow-soft: 0 22px 45px rgba(1, 8, 18, 0.55);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        min-height: 100%;
+      }
+
+      body {
+        font-family: "Manrope", "Segoe UI", sans-serif;
+        color: var(--text-primary);
+        background:
+          radial-gradient(circle at 10% 10%, #16305f 0%, transparent 38%),
+          radial-gradient(circle at 80% 0%, #094a48 0%, transparent 30%),
+          radial-gradient(circle at 50% 90%, #33175e 0%, transparent 35%),
+          var(--bg-base);
+        display: flex;
+        flex-direction: column;
+        overflow-x: hidden;
+      }
+
+      .ambient-shape {
+        position: fixed;
+        filter: blur(10px);
+        opacity: 0.45;
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      .ambient-shape.one {
+        width: 260px;
+        height: 260px;
+        top: -40px;
+        left: -80px;
+        border-radius: 45% 55% 65% 35%;
+        background: linear-gradient(135deg, rgba(62, 179, 255, 0.45), rgba(82, 242, 214, 0.1));
+      }
+
+      .ambient-shape.two {
+        width: 300px;
+        height: 300px;
+        right: -110px;
+        bottom: 80px;
+        border-radius: 60% 40% 50% 50%;
+        background: linear-gradient(135deg, rgba(82, 242, 214, 0.3), rgba(124, 103, 255, 0.08));
+      }
+
+      .app-shell {
+        position: relative;
+        z-index: 1;
+        width: min(960px, 92vw);
+        margin: clamp(26px, 8vh, 70px) auto 24px;
+      }
+
+      .glass {
+        background: linear-gradient(160deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        border: 1px solid var(--border-soft);
+        box-shadow: var(--shadow-soft);
+      }
+
+      .lookup-card {
+        padding: clamp(18px, 3.5vw, 34px);
+        border-radius: 22px;
+        text-align: center;
+        animation: float-in 0.8s ease;
+      }
+
+      .title {
+        margin: 0;
+        font-family: "Sora", "Segoe UI", sans-serif;
+        font-size: clamp(1.45rem, 2.8vw, 2.15rem);
+        font-weight: 700;
+        letter-spacing: 0.02em;
+      }
+
+      .subtitle {
+        margin: 10px auto 20px;
+        max-width: 630px;
+        color: var(--text-muted);
+        font-size: 0.98rem;
+      }
+
+      .lookup-form {
+        display: grid;
+        gap: 12px;
+        width: min(620px, 100%);
+        margin: 0 auto;
+      }
+
+      .input-wrap {
+        position: relative;
+      }
+
+      .mobile-input {
+        width: 100%;
+        border: 1px solid rgba(158, 177, 203, 0.35);
+        border-radius: 14px;
+        background: rgba(4, 12, 25, 0.7);
+        color: var(--text-primary);
+        padding: 14px 16px;
+        font-size: 1rem;
+        letter-spacing: 0.02em;
+        transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.2s ease;
+      }
+
+      .mobile-input:focus {
+        outline: none;
+        border-color: rgba(62, 179, 255, 0.8);
+        box-shadow: 0 0 0 4px rgba(62, 179, 255, 0.2);
+        transform: translateY(-1px);
+      }
+
+      .btn {
+        border: 0;
+        border-radius: 14px;
+        color: #001325;
+        padding: 13px 18px;
+        font-size: 0.98rem;
+        font-weight: 800;
+        font-family: "Sora", "Segoe UI", sans-serif;
+        cursor: pointer;
+        transition: transform 0.22s ease, box-shadow 0.22s ease, opacity 0.22s ease;
+      }
+
+      .btn:active {
+        transform: translateY(1px);
+      }
+
+      .search-btn {
+        background: linear-gradient(140deg, var(--accent), var(--accent-alt));
+        box-shadow: 0 14px 26px rgba(62, 179, 255, 0.28);
+      }
+
+      .search-btn:hover {
+        transform: translateY(-2px);
+      }
+
+      .message {
+        margin: 11px auto 0;
+        width: min(620px, 100%);
+        border-radius: 11px;
+        padding: 10px 12px;
+        font-size: 0.93rem;
+      }
+
+      .message.error {
+        background: rgba(255, 125, 143, 0.12);
+        border: 1px solid rgba(255, 125, 143, 0.45);
+        color: #ffc7d0;
+      }
+
+      .message.info {
+        background: rgba(62, 179, 255, 0.14);
+        border: 1px solid rgba(62, 179, 255, 0.42);
+        color: #b5e5ff;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      .loading-box {
+        margin: 13px auto 0;
+        width: fit-content;
+        display: inline-flex;
+        gap: 10px;
+        align-items: center;
+        padding: 9px 12px;
+        border-radius: 999px;
+        background: rgba(62, 179, 255, 0.16);
+        color: #b8e7ff;
+        border: 1px solid rgba(62, 179, 255, 0.38);
+        font-size: 0.9rem;
+      }
+
+      .spinner {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        border: 2px solid rgba(184, 231, 255, 0.25);
+        border-top-color: rgba(184, 231, 255, 1);
+        animation: spin 0.82s linear infinite;
+      }
+
+      .results-wrap {
+        margin-top: 20px;
+        padding: clamp(15px, 3.2vw, 22px);
+        border-radius: 20px;
+        animation: rise-in 0.42s ease;
+      }
+
+      .results-topbar {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+      }
+
+      .results-title {
+        margin: 0;
+        font-family: "Sora", "Segoe UI", sans-serif;
+        font-size: 1.1rem;
+      }
+
+      .action-buttons {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .action-btn {
+        border: 1px solid rgba(158, 177, 203, 0.45);
+        background: rgba(7, 17, 31, 0.78);
+        color: var(--text-primary);
+        padding: 10px 13px;
+        border-radius: 12px;
+        font-size: 0.88rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: border-color 0.25s ease, transform 0.22s ease, background 0.22s ease;
+      }
+
+      .action-btn:hover {
+        border-color: rgba(82, 242, 214, 0.55);
+        transform: translateY(-1px);
+      }
+
+      .records-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(245px, 1fr));
+        gap: 12px;
+      }
+
+      .record-card {
+        border: 1px solid rgba(158, 177, 203, 0.24);
+        border-radius: 16px;
+        background: var(--bg-elevated);
+        padding: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        min-height: 100%;
+      }
+
+      .record-head {
+        margin: 0 0 5px;
+        font-size: 0.97rem;
+        font-family: "Sora", "Segoe UI", sans-serif;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .duplicate-tag {
+        padding: 3px 7px;
+        border-radius: 999px;
+        font-size: 0.72rem;
+        letter-spacing: 0.02em;
+        color: #ffd6de;
+        border: 1px solid rgba(255, 125, 143, 0.44);
+        background: rgba(255, 125, 143, 0.16);
+      }
+
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .field-label {
+        color: var(--text-muted);
+        font-size: 0.79rem;
+      }
+
+      .field-value {
+        font-size: 0.91rem;
+        color: var(--text-primary);
+        line-height: 1.4;
+        word-break: break-word;
+      }
+
+      .no-data {
+        border: 1px dashed rgba(246, 199, 104, 0.5);
+        background: rgba(246, 199, 104, 0.1);
+        color: #ffe3ae;
+        padding: 14px;
+        border-radius: 13px;
+        font-size: 0.93rem;
+      }
+
+      footer {
+        margin: auto auto 16px;
+        padding: 10px 18px;
+        border-radius: 999px;
+        border: 1px solid var(--border-soft);
+        background: var(--bg-elevated-strong);
+        color: var(--text-muted);
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        z-index: 1;
+      }
+
+      .status-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--text-muted);
+        box-shadow: 0 0 0 0 rgba(158, 177, 203, 0.8);
+        animation: pulse 1.8s infinite;
+      }
+
+      .status-idle {
+        background: var(--text-muted);
+      }
+
+      .status-loading {
+        background: var(--accent);
+      }
+
+      .status-online {
+        background: var(--ok);
+      }
+
+      .status-nodata {
+        background: var(--warn);
+      }
+
+      .status-error {
+        background: var(--danger);
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      @keyframes float-in {
+        from {
+          opacity: 0;
+          transform: translateY(14px) scale(0.985);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      @keyframes rise-in {
+        from {
+          opacity: 0;
+          transform: translateY(8px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes pulse {
+        0% {
+          box-shadow: 0 0 0 0 rgba(158, 177, 203, 0.5);
+        }
+        70% {
+          box-shadow: 0 0 0 10px rgba(158, 177, 203, 0);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(158, 177, 203, 0);
+        }
+      }
+
+      @media (max-width: 640px) {
+        .lookup-card {
+          border-radius: 18px;
+        }
+
+        .results-wrap {
+          border-radius: 16px;
+        }
+
+        .btn.search-btn {
+          width: 100%;
+        }
+
+        .results-topbar {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="ambient-shape one"></div>
+    <div class="ambient-shape two"></div>
+
+    <main class="app-shell">
+      <section class="lookup-card glass">
+        <h1 class="title">Mobile Number Information Lookup</h1>
+        <p class="subtitle">
+          Enter a 10 digit mobile number to fetch and format available details into a clean, readable report.
+        </p>
+
+        <form id="lookupForm" class="lookup-form" novalidate>
+          <div class="input-wrap">
+            <input
+              id="mobileInput"
+              class="mobile-input"
+              type="tel"
+              placeholder="Enter 10 digit mobile number"
+              inputmode="numeric"
+              maxlength="10"
+              autocomplete="off"
+              required
+            />
+          </div>
+          <button id="searchBtn" type="submit" class="btn search-btn">Search</button>
+        </form>
+
+        <div id="messageBox" class="message hidden"></div>
+        <div id="loadingBox" class="loading-box hidden">
+          <span class="spinner"></span>
+          <span>Fetching records...</span>
+        </div>
+      </section>
+
+      <section id="resultsWrap" class="results-wrap glass hidden">
+        <div class="results-topbar">
+          <h2 class="results-title">Lookup Report</h2>
+          <div class="action-buttons">
+            <button id="copyBtn" class="action-btn" type="button">Copy Report</button>
+            <button id="downloadBtn" class="action-btn" type="button">Download TXT</button>
+          </div>
+        </div>
+        <div id="recordsGrid" class="records-grid"></div>
+      </section>
+    </main>
+
+    <footer>
+      <span id="statusDot" class="status-dot status-idle"></span>
+      <span id="statusText">API Status: Idle</span>
+    </footer>
+
+    <!-- External JavaScript Files - Security & Application Logic -->
+    <script src="security.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
